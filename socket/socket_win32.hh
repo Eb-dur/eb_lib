@@ -1,9 +1,10 @@
-#include <winsock2.h>
+
 #include <string>
 
 namespace sck
 {
-    
+    #include <winsock2.h>
+
 enum ADDRESS_FAMILY{
     UNSPEC = 0,
     INET = 2,
@@ -15,7 +16,8 @@ enum ADDRESS_FAMILY{
     BTH = 32
 };
 
-enum class SOCKET_TYPE{
+enum SOCKET_TYPE{
+    NONE = 0,
     STREAM = 1,
     DGRAM = 2,
     RAW = 3,
@@ -40,21 +42,29 @@ class Socket{
         SOCKET_TYPE const typ, 
         SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT
         );
-        Socket(Socket& const other);
-        Socket& operator=(Socket& const other);
-        Socket(Socket&& const other);
-        Socket& operator=(Socket&& const other);
+        Socket(Socket& const other) = delete;
+        Socket& operator=(Socket& const other) = delete;
+        Socket(Socket&& other);
+        Socket& operator=(Socket&& other);
+
+        bool operator==(Socket& other) const;
+        bool operator!=(Socket& other) const;
 
         ~Socket();
-        void bind(std::string address);
-        void listen();
-        void accept();
-        void close();
+        void bind(std::string address) const;
+        void listen(unsigned int const queue) const;
+        Socket accept();
+        int close();
         unsigned int send(char** buffer, unsigned int const size) const;
-        unsigned int recieve(char** buffer, unsigned int const size, unsigned int const len) const;
+        unsigned int recv(char** buffer, unsigned int const size, unsigned int const len) const;
 
     private:
         SOCKET sock{};
+        ADDRESS_FAMILY fam{};
+        SOCKET_TYPE type{};
+        SOCKET_PROTOCOL protocol{};
+        sockaddr bound_to{};
+        int sockaddr_size{};
 
 
 
