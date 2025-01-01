@@ -96,16 +96,14 @@ namespace sck
         }
     }
 
-    unsigned int Socket::send(char **buffer, unsigned int const size) const
+    int Socket::send(char *buffer, unsigned int const size) const
     {
-        // Empty definition
-        return 0;
+        return sck::send(sock,buffer, size,0);
     }
 
-    unsigned int Socket::recv(char **buffer, unsigned int const size, unsigned int const len) const
+    int Socket::recv(char *buffer, unsigned int const size, unsigned int const len) const
     {
-        // Empty definition
-        return 0;
+        return sck::recv(sock, buffer, size, 0);
     }
 
     bool Socket::operator==(Socket &other) const

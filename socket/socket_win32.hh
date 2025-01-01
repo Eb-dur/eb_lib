@@ -55,8 +55,8 @@ class Socket{
         void listen(unsigned int const queue) const;
         Socket accept();
         int close();
-        unsigned int send(char** buffer, unsigned int const size) const;
-        unsigned int recv(char** buffer, unsigned int const size, unsigned int const len) const;
+        int send(char* buffer, unsigned int const size) const;
+        int recv(char* buffer, unsigned int const size, unsigned int const len) const;
 
     private:
         SOCKET sock{};
