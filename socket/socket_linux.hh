@@ -2,22 +2,23 @@
 #include <string>
 
 namespace sck
-{
-    #include <winsock2.h>
+{   
+    using SOCKET = int;
+    #include <sys/socket.h>
 
 enum ADDRESS_FAMILY{
-    UNSPEC = 0,
-    INET = 2,
-    INET6 = 23,
+    UNSPEC = AF_UNSPEC,
+    INET = AF_INET,
+    INET6 = AF_INET6,
 };
 
 enum SOCKET_TYPE{
     NONE = 0,
-    STREAM = 1,
-    DGRAM = 2,
-    RAW = 3,
-    RDM = 4,
-    SEQPACKET = 5,
+    STREAM = SOCK_STREAM,
+    DGRAM = SOCK_DGRAM,
+    RAW = SOCK_RAW,
+    RDM = SOCK_RDM,
+    SEQPACKET = SOCK_SEQPACKET,
 };
 
 enum SOCKET_PROTOCOL{
@@ -35,6 +36,7 @@ class Socket{
         SOCKET_TYPE const typ, 
         SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT
         );
+        Socket(std::string ip, uint16_t port);
         Socket(Socket& const other) = delete;
         Socket& operator=(Socket& const other) = delete;
         Socket(Socket&& other);
@@ -44,7 +46,7 @@ class Socket{
         bool operator!=(Socket& other) const;
 
         ~Socket();
-        void bind(std::string address) const;
+        void bind(std::string address, uint16_t const port) const;
         void listen(unsigned int const queue) const;
         Socket accept();
         int close();
@@ -57,7 +59,7 @@ class Socket{
         SOCKET_TYPE type{};
         SOCKET_PROTOCOL protocol{};
         sockaddr bound_to{};
-        int sockaddr_size{};
+        unsigned int sockaddr_size{};
 
 
 
