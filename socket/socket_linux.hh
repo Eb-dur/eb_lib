@@ -1,4 +1,5 @@
-
+#ifndef SOCKET_LINUX_HH
+#define SOCKET_LINUX_HH
 #include <string>
 
 namespace sck
@@ -36,7 +37,6 @@ class Socket{
         SOCKET_TYPE const typ, 
         SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT
         );
-        Socket(std::string ip, uint16_t port);
         Socket(Socket& const other) = delete;
         Socket& operator=(Socket& const other) = delete;
         Socket(Socket&& other);
@@ -54,11 +54,12 @@ class Socket{
         int recv(char* buffer, unsigned int const size, unsigned int const len) const;
 
     private:
+        // TODO: Add free of this in destructor
+        sockaddr_storage* bound_to{};
         SOCKET sock{};
         ADDRESS_FAMILY fam{};
         SOCKET_TYPE type{};
         SOCKET_PROTOCOL protocol{};
-        sockaddr bound_to{};
         unsigned int sockaddr_size{};
 
 
@@ -66,3 +67,5 @@ class Socket{
 };
 
 }
+
+#endif

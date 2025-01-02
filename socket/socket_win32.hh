@@ -1,4 +1,5 @@
-
+#ifndef SOCKET_WINDOWS_HH
+#define SOCKET_WINDOWS_HH
 #include <string>
 
 namespace sck
@@ -32,7 +33,7 @@ enum SOCKET_PROTOCOL{
 class Socket{
     public:
         Socket(ADDRESS_FAMILY const af, 
-        SOCKET_TYPE const typ, 
+        SOCKET_TYPE const type, 
         SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT
         );
         Socket(Socket& const other) = delete;
@@ -52,15 +53,17 @@ class Socket{
         int recv(char* buffer, unsigned int const size, unsigned int const len) const;
 
     private:
-        SOCKET sock{};
-        ADDRESS_FAMILY fam{};
-        SOCKET_TYPE type{};
+        // TODO: Add free of this in destructor
+        sockaddr_storage* bound_to{};
         SOCKET_PROTOCOL protocol{};
-        sockaddr bound_to{};
+        ADDRESS_FAMILY fam{};
         int sockaddr_size{};
+        SOCKET_TYPE type{};
+        SOCKET sock{};
 
 
 
 };
 
 }
+#endif

@@ -76,14 +76,20 @@ namespace sck
 
     Socket Socket::accept()
     {   
-        sck::sockaddr temp{};
+        sck::sockaddr_storage* addr{new sockaddr_storage};
         int addr_len{};
         
-        sck::SOCKET conn{sck::accept(sock,&temp,&addr_len)};
+        sck::SOCKET conn{sck::accept(sock,reinterpret_cast<sockaddr*>(addr),&addr_len)};
+        
+        if (conn == INVALID_SOCKET) {
+        throw std::system_error(std::error_code(WSAGetLastError(), std::system_category()), "Error accepting connection");
+    }
+
         Socket conn_soc{this->fam, this->type, this->protocol};
+
         conn_soc.sock = conn;
-        bound_to = temp;
-        sockaddr_size = addr_len;
+        conn_soc.bound_to = addr;
+        conn_soc.sockaddr_size = addr_len;
         return conn_soc;
     }
 
