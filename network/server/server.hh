@@ -7,6 +7,13 @@
 #include <deque>
 #include <vector>
 
+/*
+
+    The pack_up_func should be a function that can handle all sorts of
+    packages that the server should be able to handle. 
+
+*/
+
 
 namespace srv{
 
