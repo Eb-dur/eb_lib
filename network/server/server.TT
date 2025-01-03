@@ -1,0 +1,11 @@
+namespace srv{
+    template <unsigned LargestPacket>
+    class Server{
+        public:
+            Server();
+            ~Server();
+
+        private:
+
+    };
+}
