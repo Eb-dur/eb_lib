@@ -16,7 +16,6 @@ namespace srv{
     {
         public:
             virtual ~Packet() = default;
-
             virtual void initialize(char* bytes) = 0;
             virtual int send(sck::Socket s) = 0;
             virtual unsigned char id() = 0;
