@@ -1,11 +1,13 @@
-#include "socket_win32.hh"
+#include "socket.hh"
+
+#include <utility>
 #include <system_error>
 #include <winsock.h>
+#include <WS2tcpip.h>
 
-namespace sck
-{
+using namespace sck;
 
-    Socket::Socket(ADDRESS_FAMILY const af, SOCKET_TYPE const type, SOCKET_PROTOCOL const protocol) : sock{socket(af, type, protocol)}, fam{af}, type{type}, protocol{protocol}
+    Socket::Socket(INET_TYPE const af, SOCKET_TYPE const type, SOCKET_PROTOCOL const protocol) : sock{socket(af, type, protocol)}, fam{af}, type{type}, protocol{protocol}
     {
         if (sock == INVALID_SOCKET)
         {
@@ -32,10 +34,10 @@ namespace sck
     }
     */
 
-    Socket::Socket(Socket && other) : sock{std::exchange(other.sock, 0)}, 
-    fam{std::exchange(other.fam, 0)},
-    type{std::exchange(other.type, 0)}, 
-    protocol{std::exchange(other.protocol, 0)}
+    Socket::Socket(Socket && other) : sock{::std::exchange(other.sock, 0)}, 
+    fam{::std::exchange(other.fam, UNSPEC)},
+    type{::std::exchange(other.type, NONE)},
+    protocol{::std::exchange(other.protocol, DEFAULT)}
     {
 
     }
@@ -45,10 +47,10 @@ namespace sck
         // Empty definition
         if (this != &other){
             close();
-            sock = std::exchange(other.sock, 0);
-            fam = std::exchange(other.fam, ADDRESS_FAMILY::UNSPEC);
-            type = std::exchange(other.type, SOCKET_TYPE::NONE);
-            protocol = std::exchange(other.protocol, SOCKET_PROTOCOL::DEFAULT);
+            sock = ::std::exchange(other.sock, 0);
+            fam = ::std::exchange(other.fam, INET_TYPE::UNSPEC);
+            type = ::std::exchange(other.type, SOCKET_TYPE::NONE);
+            protocol = ::std::exchange(other.protocol, SOCKET_PROTOCOL::DEFAULT);
         }
         return *this;
     }
@@ -56,30 +58,68 @@ namespace sck
     Socket::~Socket()
     {   
         this->close();
+        delete bound_to;
     }
 
-    void Socket::bind(std::string address) const
+    void Socket::bind(std::string address, uint16_t port)
     {   
-        sockaddr addr_converted{};
+        sockaddr_storage* addr_converted{new sockaddr_storage{}};
+        this->bound_to = addr_converted;
         int addr_len{};
-        int succ{WSAStringToAddressA(address.data(), fam, NULL, &addr_converted, &addr_len)};
+        int succ{WSAStringToAddressA(address.data(), fam, NULL, reinterpret_cast<sockaddr*>(addr_converted), &addr_len)};
         if (succ != 0){
             throw std::system_error(std::error_code(WSAGetLastError(), std::system_category()), "Error tying to bind socket to address");
         }
-        succ = sck::bind(sock, &addr_converted, addr_len);
+        
+        if (fam == ::INET_TYPE::INET6){
+            sockaddr_in6* addr{reinterpret_cast<sockaddr_in6*>(addr_converted)};
+            addr->sin6_port = port;
+            succ = ::bind(sock, reinterpret_cast<sockaddr*>(addr), addr_len);
+        }
+        else if ( fam == sck::INET_TYPE::INET){
+            sockaddr_in* addr{reinterpret_cast<sockaddr_in*>(addr_converted)};
+            addr->sin_port = port;
+            succ = ::bind(sock, reinterpret_cast<sockaddr*>(addr), addr_len);
+        }
+
+    }
+
+    int Socket::connect(std::string address, uint16_t port)
+    {   
+        sockaddr_storage* addr_converted{new sockaddr_storage{}};
+        
+        int addr_len{};
+        int succ{WSAStringToAddressA(address.data(), fam, NULL, reinterpret_cast<sockaddr*>(addr_converted), &addr_len)};
+        if (succ != 0){
+            throw std::system_error(std::error_code(WSAGetLastError(), std::system_category()), "Error tying to bind socket to address");
+        }
+        
+        if (fam == INET_TYPE::INET6){
+            sockaddr_in6* addr{reinterpret_cast<sockaddr_in6*>(addr_converted)};
+            addr->sin6_port = port;
+            succ = ::connect(sock, reinterpret_cast<sockaddr*>(addr), addr_len);
+        }
+        else if ( fam == INET_TYPE::INET){
+            sockaddr_in* addr{reinterpret_cast<sockaddr_in*>(addr_converted)};
+            addr->sin_port = port;
+            succ = ::connect(sock, reinterpret_cast<sockaddr*>(addr), addr_len);
+        }
+        
+        this->bound_to = addr_converted;
+        return succ;
     }
 
     void Socket::listen(unsigned int const queue) const
     {
-        sck::listen(sock, queue);
+        ::listen(sock, queue);
     }
 
     Socket Socket::accept()
     {   
-        sck::sockaddr_storage* addr{new sockaddr_storage};
+        sockaddr_storage* addr{new sockaddr_storage{}};
         int addr_len{};
         
-        sck::SOCKET conn{sck::accept(sock,reinterpret_cast<sockaddr*>(addr),&addr_len)};
+        sck::SOCKET conn{::accept(sock,reinterpret_cast<sockaddr*>(addr),&addr_len)};
         
         if (conn == INVALID_SOCKET) {
         throw std::system_error(std::error_code(WSAGetLastError(), std::system_category()), "Error accepting connection");
@@ -96,20 +136,21 @@ namespace sck
     int Socket::close()
     {   
         if (sock != 0){
-            int val{sck::closesocket(sock)};
+            int val{closesocket(sock)};
             if (val == 0)
                 sock = 0;
         }
+        return sock;
     }
 
     int Socket::send(char *buffer, unsigned int const size) const
     {
-        return sck::send(sock,buffer, size,0);
+        return ::send(sock,buffer, size,0);
     }
 
-    int Socket::recv(char *buffer, unsigned int const size, unsigned int const len) const
+    int Socket::recv(char *buffer, unsigned int const size) const
     {
-        return sck::recv(sock, buffer, size, 0);
+        return ::recv(sock, buffer, size, 0);
     }
 
     bool Socket::operator==(Socket &other) const
@@ -122,4 +163,3 @@ namespace sck
         return !(*this==other);
     }
 
-}

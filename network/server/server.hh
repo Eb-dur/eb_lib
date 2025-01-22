@@ -14,9 +14,6 @@
 
 */
 
-
-
-
 namespace srv{
 
     class Server{
@@ -27,7 +24,7 @@ namespace srv{
 
         private:
             sck::Socket socket;
-            Packet* (*pack_up_func)(char*, size_t) = nullptr;
+            Packet* (*pack_up_func)(char*, size_t){nullptr};
             std::vector<sck::Socket> connections{};
             std::deque<Packet*> handle_buffer{};
             std::deque<Packet*> send_buffer{};

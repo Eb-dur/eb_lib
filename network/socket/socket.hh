@@ -2,13 +2,19 @@
 #define SOCKET_HH
 
 #include <string>
+#include <cstdint>
+#ifdef _WIN32
+    #include <winsock2.h>
+#else
+    #include <sys/socket.h>
+    #include <arpa/inet.h>
+#endif
 
 namespace sck {
 
 #ifdef _WIN32
-    #include <winsock2.h>
     using SOCKET = SOCKET;
-    enum ADDRESS_FAMILY {
+    enum INET_TYPE : int{
         UNSPEC = 0,
         INET = 2,
         INET6 = 23,
@@ -31,10 +37,8 @@ namespace sck {
     };
 // If not windows it is linux
 #else
-    #include <sys/socket.h>
-    #include <arpa/inet.h>
     using SOCKET = int;
-    enum ADDRESS_FAMILY {
+    enum INET_TYPE {
         UNSPEC = AF_UNSPEC,
         INET = AF_INET,
         INET6 = AF_INET6,
@@ -59,27 +63,29 @@ namespace sck {
 
 class Socket {
 public:
-    Socket(ADDRESS_FAMILY const af, SOCKET_TYPE const type, SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT);
-    Socket(Socket& const other) = delete;
-    Socket& operator=(Socket& const other) = delete;
-    Socket(Socket&& other) noexcept;
-    Socket& operator=(Socket&& other) noexcept;
+    Socket() = delete;
+    Socket(INET_TYPE const af, SOCKET_TYPE const type, SOCKET_PROTOCOL const protocol = SOCKET_PROTOCOL::DEFAULT);
+    Socket(Socket& other) = delete;
+    Socket& operator=(Socket& other) = delete;
+    Socket(Socket&& other);
+    Socket& operator=(Socket&& other);
 
     bool operator==(Socket& other) const;
     bool operator!=(Socket& other) const;
 
     ~Socket();
-    void bind(std::string address, uint16_t port = 0) const;
+    void bind(std::string address, uint16_t port = {});
     void listen(unsigned int const queue) const;
     Socket accept();
     int close();
+    int connect(std::string address, uint16_t port = {});
     int send(char* buffer, unsigned int const size) const;
-    int recv(char* buffer, unsigned int const size, unsigned int const len) const;
+    int recv(char* buffer, unsigned int const size) const;
 
 private:
     sockaddr_storage* bound_to{};
     SOCKET sock{};
-    ADDRESS_FAMILY fam{};
+    INET_TYPE fam{};
     SOCKET_TYPE type{};
     SOCKET_PROTOCOL protocol{};
     unsigned int sockaddr_size{};
